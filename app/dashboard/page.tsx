@@ -18,14 +18,16 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .maybeSingle();
 
-  if (userFetchError) console.error("Error fetching user:", userFetchError);
-
+  let userInsertErrStr = "";
   if (!publicUser) {
     const { error: insertUserError } = await supabase.from('users').insert({
       id: user.id,
       email: user.email || '',
     });
-    if (insertUserError) console.error("Error inserting user:", insertUserError);
+    if (insertUserError) {
+      console.error("Error inserting user:", insertUserError);
+      userInsertErrStr = JSON.stringify(insertUserError);
+    }
   }
 
   // 2. Ensure tenant exists
@@ -35,8 +37,7 @@ export default async function DashboardPage() {
     .eq('owner_id', user.id)
     .maybeSingle();
     
-  if (tenantFetchError) console.error("Error fetching tenant:", tenantFetchError);
-
+  let tenantInsertErrStr = "";
   if (!tenant) {
     const { data: newTenant, error: insertTenantError } = await supabase
       .from('tenants')
@@ -47,17 +48,36 @@ export default async function DashboardPage() {
       .select('id, name')
       .single();
       
-    if (insertTenantError) console.error("Error inserting tenant:", insertTenantError);
+    if (insertTenantError) {
+      console.error("Error inserting tenant:", insertTenantError);
+      tenantInsertErrStr = JSON.stringify(insertTenantError);
+    }
     tenant = newTenant;
   }
 
   if (!tenant) {
-    console.error("Failed to load or create workspace for user:", user.id);
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+      <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center bg-background text-foreground">
         <h2 className="text-2xl font-bold text-red-600 mb-2">Error loading workspace</h2>
         <p className="text-muted-foreground mb-4">We encountered a database error while setting up your account.</p>
-        <p className="text-sm">Please check your Vercel logs or ensure the SUPABASE_SERVICE_ROLE_KEY is correctly set.</p>
+        
+        <div className="bg-muted p-4 rounded-md text-left w-full max-w-2xl overflow-auto text-sm font-mono border border-border">
+          <p className="font-bold text-destructive mb-2">Diagnostic Data:</p>
+          <p><strong>User ID:</strong> {user.id}</p>
+          <p><strong>User Insert Error:</strong> {userInsertErrStr || "None"}</p>
+          <p><strong>Tenant Fetch Error:</strong> {tenantFetchError ? JSON.stringify(tenantFetchError) : "None"}</p>
+          <p><strong>Tenant Insert Error:</strong> {tenantInsertErrStr || "None"}</p>
+        </div>
+        
+        <p className="text-sm mt-6 max-w-md">
+          Please screenshot this box and share it with the AI agent so they can identify the exact Row Level Security (RLS) or Foreign Key constraint failing.
+        </p>
+        
+        <form action="/auth/signout" method="post" className="mt-4">
+          <button type="submit" className="text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80 px-4 py-2 rounded-md">
+            Sign Out and Try Again
+          </button>
+        </form>
       </div>
     );
   }
