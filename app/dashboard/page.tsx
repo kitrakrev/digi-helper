@@ -71,7 +71,7 @@ export default async function DashboardPage() {
   // Fetch Integrations
   const { data: integrations } = await supabaseAdmin
     .from('integrations')
-    .select('id, platform, created_at')
+    .select('id, platform, created_at, credentials')
     .eq('tenant_id', tenant.id);
 
   const linkedPlatforms = integrations?.map(i => i.platform) || [];
@@ -114,24 +114,38 @@ export default async function DashboardPage() {
               </span>
             </div>
             
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-[#E01E5A] flex items-center justify-center text-white">S</div>
-                <span className="font-medium">Slack</span>
+            <div className="flex flex-col border-b border-border pb-3">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[#E01E5A] flex items-center justify-center text-white">S</div>
+                  <span className="font-medium">Slack</span>
+                </div>
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${linkedPlatforms.includes('slack') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                  {linkedPlatforms.includes('slack') ? 'Connected' : 'Not Connected'}
+                </span>
               </div>
-              <span className={`text-xs px-2 py-1 rounded-full font-medium ${linkedPlatforms.includes('slack') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                {linkedPlatforms.includes('slack') ? 'Connected' : 'Not Connected'}
-              </span>
+              {linkedPlatforms.includes('slack') && (
+                <div className="text-xs text-muted-foreground ml-10">
+                  Channels: {integrations?.find(i => i.platform === 'slack')?.credentials?.channels?.join(', ') || 'None'}
+                </div>
+              )}
             </div>
 
-            <div className="flex items-center justify-between pb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-[#333] flex items-center justify-center text-white">G</div>
-                <span className="font-medium">GitHub</span>
+            <div className="flex flex-col pb-2">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[#333] flex items-center justify-center text-white">G</div>
+                  <span className="font-medium">GitHub</span>
+                </div>
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${linkedPlatforms.includes('github') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                  {linkedPlatforms.includes('github') ? 'Connected' : 'Not Connected'}
+                </span>
               </div>
-              <span className={`text-xs px-2 py-1 rounded-full font-medium ${linkedPlatforms.includes('github') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                {linkedPlatforms.includes('github') ? 'Connected' : 'Not Connected'}
-              </span>
+              {linkedPlatforms.includes('github') && (
+                <div className="text-xs text-muted-foreground ml-10">
+                  Repos: {integrations?.find(i => i.platform === 'github')?.credentials?.repositories?.join(', ') || 'None'}
+                </div>
+              )}
             </div>
           </div>
           <div className="mt-6 text-sm text-muted-foreground p-3 bg-muted rounded-md">

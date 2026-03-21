@@ -56,6 +56,12 @@ export const buildTools = (tenantId: string) => ({
       if (!integration || !integration.credentials || !integration.credentials.github_token) {
         return { error: 'GitHub account not linked. Please provide a PAT in the integrations table.' };
       }
+      
+      // Verify repo is allowed
+      const allowedRepos = integration.credentials.repositories || [];
+      if (allowedRepos.length > 0 && !allowedRepos.includes(repoName)) {
+        return { error: `Repository ${repoName} is not in the list of your allowed connected repositories. Please add it first.` };
+      }
 
       const octokit = new Octokit({ auth: integration.credentials.github_token });
       const repoParts = repoName.includes('/') ? repoName.split('/') : [integration.credentials.github_username || 'unknown', repoName];
@@ -166,36 +172,44 @@ export const buildTools = (tenantId: string) => ({
   }),
 
   connectSlack: tool({
-    description: 'Save the user\'s Slack Bot Token to the database so you can read their Slack messages.',
+    description: 'Save the user\'s Slack Bot Token and allowed channels to the database so you can read their Slack messages.',
     parameters: z.object({
-      slackToken: z.string().describe('The Slack Bot Token (starts with xoxb-) provided by the user.')
+      slackToken: z.string().optional().describe('The Slack Bot Token (starts with xoxb-) provided by the user. Optional if only updating channels.'),
+      channels: z.array(z.string()).optional().describe('List of Slack channel IDs to monitor or allow access to (optional)')
     }),
     // @ts-ignore
-    execute: async ({ slackToken }) => {
+    execute: async ({ slackToken, channels }) => {
       if (!tenantId) return { success: false, error: 'Tenant ID required' };
       
       const { data: existing } = await supabaseAdmin
         .from('integrations')
-        .select('id')
+        .select('id, credentials')
         .eq('tenant_id', tenantId)
         .eq('platform', 'slack')
-        .single();
+        .maybeSingle();
         
+      const newCreds = {
+         slack_token: slackToken || existing?.credentials?.slack_token,
+         channels: channels || existing?.credentials?.channels || []
+      };
+
       if (existing) {
          const { error } = await supabaseAdmin
            .from('integrations')
-           .update({ credentials: { slack_token: slackToken } })
+           .update({ credentials: newCreds })
            .eq('id', existing.id);
          if (error) return { success: false, error: error.message };
       } else {
+         if (!slackToken) return { success: false, error: 'Slack token is required for a new connection.' };
          const { error } = await supabaseAdmin
            .from('integrations')
-           .insert({ tenant_id: tenantId, platform: 'slack', credentials: { slack_token: slackToken } });
+           .insert({ tenant_id: tenantId, platform: 'slack', credentials: newCreds });
          if (error) return { success: false, error: error.message };
       }
-      return { success: true, message: 'Slack token successfully saved! You can now read messages.' };
+      return { success: true, message: `Slack settings saved. Connected channels: ${newCreds.channels.join(', ') || 'None'}` };
     }
   }),
+
   readSlackMessages: tool({
     description: 'Read recent messages from a specific Slack channel using the user\'s connected Slack token.',
     parameters: z.object({
@@ -221,6 +235,12 @@ export const buildTools = (tenantId: string) => ({
         };
       }
       
+      // Optional: Check if channel is in allowed channels
+      const allowedChannels = integration.credentials.channels || [];
+      if (allowedChannels.length > 0 && !allowedChannels.includes(channelId)) {
+        return { success: false, error: `Channel ${channelId} is not in your allowed channels list.` };
+      }
+      
       try {
         const response = await fetch(`https://slack.com/api/conversations.history?channel=${channelId}&limit=${limit}`, {
           headers: {
@@ -239,4 +259,45 @@ export const buildTools = (tenantId: string) => ({
       }
     }
   }),
+
+  connectGitHub: tool({
+    description: 'Save the user\'s GitHub Token, username, and allowed repositories to the database so you can update their website or repos.',
+    parameters: z.object({
+      githubToken: z.string().optional().describe('The GitHub Personal Access Token (PAT). Optional if only updating repos.'),
+      githubUsername: z.string().optional().describe('The GitHub username. Optional if only updating repos.'),
+      repositories: z.array(z.string()).optional().describe('List of repository names (e.g. "username/repo") to allow access to.'),
+    }),
+    // @ts-ignore
+    execute: async ({ githubToken, githubUsername, repositories }) => {
+      if (!tenantId) return { success: false, error: 'Tenant ID required' };
+      
+      const { data: existing } = await supabaseAdmin
+        .from('integrations')
+        .select('id, credentials')
+        .eq('tenant_id', tenantId)
+        .eq('platform', 'github')
+        .maybeSingle();
+        
+      const newCreds = {
+         github_token: githubToken || existing?.credentials?.github_token,
+         github_username: githubUsername || existing?.credentials?.github_username,
+         repositories: repositories || existing?.credentials?.repositories || []
+      };
+
+      if (existing) {
+         const { error } = await supabaseAdmin
+           .from('integrations')
+           .update({ credentials: newCreds })
+           .eq('id', existing.id);
+         if (error) return { success: false, error: error.message };
+      } else {
+         if (!githubToken || !githubUsername) return { success: false, error: 'GitHub token and username are required for a new connection.' };
+         const { error } = await supabaseAdmin
+           .from('integrations')
+           .insert({ tenant_id: tenantId, platform: 'github', credentials: newCreds });
+         if (error) return { success: false, error: error.message };
+      }
+      return { success: true, message: `GitHub settings saved. Connected repos: ${newCreds.repositories.join(', ') || 'None'}` };
+    }
+  })
 });
