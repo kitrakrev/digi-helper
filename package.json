@@ -15,18 +15,22 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.52",
     "@chat-adapter/discord": "latest",
+    "@chat-adapter/state-memory": "^4.20.2",
     "@octokit/rest": "^22.0.1",
     "@sentry/nextjs": "latest",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "^2.99.3",
     "ai": "^6.0.134",
+    "bufferutil": "^4.1.0",
     "clsx": "latest",
     "lucide-react": "latest",
     "next": "^16.2.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tailwind-merge": "latest",
+    "utf-8-validate": "^6.0.6",
     "workflow": "latest",
+    "zlib-sync": "^0.1.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {
