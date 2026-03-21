@@ -21,7 +21,7 @@ export default async function DashboardPage() {
   if (userFetchError) console.error("Error fetching user:", userFetchError);
 
   if (!publicUser) {
-    const { error: insertUserError } = await supabaseAdmin.from('users').insert({
+    const { error: insertUserError } = await supabase.from('users').insert({
       id: user.id,
       email: user.email || '',
     });
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
   }
 
   // 2. Ensure tenant exists
-  let { data: tenant, error: tenantFetchError } = await supabaseAdmin
+  let { data: tenant, error: tenantFetchError } = await supabase
     .from('tenants')
     .select('id, name')
     .eq('owner_id', user.id)
@@ -38,7 +38,7 @@ export default async function DashboardPage() {
   if (tenantFetchError) console.error("Error fetching tenant:", tenantFetchError);
 
   if (!tenant) {
-    const { data: newTenant, error: insertTenantError } = await supabaseAdmin
+    const { data: newTenant, error: insertTenantError } = await supabase
       .from('tenants')
       .insert({
         name: `${user.user_metadata.full_name || 'User'}'s Workspace`,
@@ -67,7 +67,7 @@ export default async function DashboardPage() {
   const discordId = discordIdentity?.id;
   
   if (discordId) {
-    const { data: existingDiscord } = await supabaseAdmin
+    const { data: existingDiscord } = await supabase
       .from('integrations')
       .select('id')
       .eq('tenant_id', tenant.id)
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
       .maybeSingle();
     
     if (!existingDiscord) {
-      await supabaseAdmin.from('integrations').insert({
+      await supabase.from('integrations').insert({
         tenant_id: tenant.id,
         platform: 'discord',
         credentials: { discord_user_id: discordId }
