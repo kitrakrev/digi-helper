@@ -16,6 +16,6 @@ const nextConfig = {
 export default withSentryConfig(nextConfig, {
   // Suppresses source map uploading logs during build
   silent: true,
-  org: "your-sentry-org",
+  org: "hobby-voh",
   project: "digital-helper",
 });
