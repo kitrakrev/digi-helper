@@ -12,28 +12,33 @@ export default async function DashboardPage() {
   }
 
   // 1. Ensure user exists in public.users
-  const { data: publicUser } = await supabaseAdmin
+  const { data: publicUser, error: userFetchError } = await supabaseAdmin
     .from('users')
     .select('id')
     .eq('id', user.id)
     .maybeSingle();
 
+  if (userFetchError) console.error("Error fetching user:", userFetchError);
+
   if (!publicUser) {
-    await supabaseAdmin.from('users').insert({
+    const { error: insertUserError } = await supabaseAdmin.from('users').insert({
       id: user.id,
       email: user.email || '',
     });
+    if (insertUserError) console.error("Error inserting user:", insertUserError);
   }
 
   // 2. Ensure tenant exists
-  let { data: tenant } = await supabaseAdmin
+  let { data: tenant, error: tenantFetchError } = await supabaseAdmin
     .from('tenants')
     .select('id, name')
     .eq('owner_id', user.id)
     .maybeSingle();
+    
+  if (tenantFetchError) console.error("Error fetching tenant:", tenantFetchError);
 
   if (!tenant) {
-    const { data: newTenant } = await supabaseAdmin
+    const { data: newTenant, error: insertTenantError } = await supabaseAdmin
       .from('tenants')
       .insert({
         name: `${user.user_metadata.full_name || 'User'}'s Workspace`,
@@ -41,11 +46,20 @@ export default async function DashboardPage() {
       })
       .select('id, name')
       .single();
+      
+    if (insertTenantError) console.error("Error inserting tenant:", insertTenantError);
     tenant = newTenant;
   }
 
   if (!tenant) {
-    return <div>Error loading workspace</div>;
+    console.error("Failed to load or create workspace for user:", user.id);
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+        <h2 className="text-2xl font-bold text-red-600 mb-2">Error loading workspace</h2>
+        <p className="text-muted-foreground mb-4">We encountered a database error while setting up your account.</p>
+        <p className="text-sm">Please check your Vercel logs or ensure the SUPABASE_SERVICE_ROLE_KEY is correctly set.</p>
+      </div>
+    );
   }
 
   // 3. Ensure discord integration exists based on oauth
