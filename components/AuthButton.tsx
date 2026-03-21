@@ -10,10 +10,11 @@ export default function AuthButton() {
 
   const handleLogin = async () => {
     setIsLoading(true)
+    const currentOrigin = window.location.origin;
     await supabase.auth.signInWithOAuth({
       provider: 'discord',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${currentOrigin}/auth/callback`,
       },
     })
   }
