@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",
@@ -12,15 +15,31 @@
   "type": "commonjs",
   "dependencies": {
     "@ai-sdk/google": "^3.0.52",
+    "@chat-adapter/discord": "latest",
     "@octokit/rest": "^22.0.1",
+    "@sentry/nextjs": "latest",
+    "@supabase/ssr": "latest",
     "@supabase/supabase-js": "^2.99.3",
     "ai": "^6.0.134",
+    "clsx": "latest",
+    "lucide-react": "latest",
     "next": "^15.1.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "tailwind-merge": "latest",
+    "workflow": "latest",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "autoprefixer": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "15.1.0",
+    "postcss": "latest",
+    "tailwindcss": "4",
+    "typescript": "latest",
     "vitest": "^4.1.0"
   }
 }
