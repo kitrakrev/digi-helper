@@ -163,5 +163,80 @@ export const buildTools = (tenantId: string) => ({
       
       return { success: true, details: results };
     }
-  })
+  }),
+
+  connectSlack: tool({
+    description: 'Save the user\'s Slack Bot Token to the database so you can read their Slack messages.',
+    parameters: z.object({
+      slackToken: z.string().describe('The Slack Bot Token (starts with xoxb-) provided by the user.')
+    }),
+    // @ts-ignore
+    execute: async ({ slackToken }) => {
+      if (!tenantId) return { success: false, error: 'Tenant ID required' };
+      
+      const { data: existing } = await supabaseAdmin
+        .from('integrations')
+        .select('id')
+        .eq('tenant_id', tenantId)
+        .eq('platform', 'slack')
+        .single();
+        
+      if (existing) {
+         const { error } = await supabaseAdmin
+           .from('integrations')
+           .update({ credentials: { slack_token: slackToken } })
+           .eq('id', existing.id);
+         if (error) return { success: false, error: error.message };
+      } else {
+         const { error } = await supabaseAdmin
+           .from('integrations')
+           .insert({ tenant_id: tenantId, platform: 'slack', credentials: { slack_token: slackToken } });
+         if (error) return { success: false, error: error.message };
+      }
+      return { success: true, message: 'Slack token successfully saved! You can now read messages.' };
+    }
+  }),
+  readSlackMessages: tool({
+    description: 'Read recent messages from a specific Slack channel using the user\'s connected Slack token.',
+    parameters: z.object({
+      channelId: z.string().describe('The Slack channel ID to read from (e.g., C01234567). Ask the user if you do not know it.'),
+      limit: z.number().optional().default(5).describe('Number of messages to fetch')
+    }),
+    // @ts-ignore
+    execute: async ({ channelId, limit }) => {
+      if (!tenantId) return { success: false, error: 'Tenant ID required' };
+      
+      const { data: integration } = await supabaseAdmin
+        .from('integrations')
+        .select('credentials')
+        .eq('tenant_id', tenantId)
+        .eq('platform', 'slack')
+        .single();
+        
+      if (!integration || !integration.credentials || !integration.credentials.slack_token) {
+        return { 
+          success: false, 
+          error: 'Slack account not linked.', 
+          instructionForAgent: 'Please ask the user to provide their Slack Bot Token (starts with xoxb-) so you can read their messages.' 
+        };
+      }
+      
+      try {
+        const response = await fetch(`https://slack.com/api/conversations.history?channel=${channelId}&limit=${limit}`, {
+          headers: {
+            'Authorization': `Bearer ${integration.credentials.slack_token}`
+          }
+        });
+        const data = await response.json();
+        
+        if (!data.ok) {
+           return { success: false, error: data.error, instructionForAgent: 'There was an error from the Slack API. The bot token might be invalid or not in the channel.' };
+        }
+        
+        return { success: true, messages: data.messages };
+      } catch (err: any) {
+         return { success: false, error: err.message };
+      }
+    }
+  }),
 });
