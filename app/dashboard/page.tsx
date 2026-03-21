@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import ChatInterface from '@/components/ChatInterface';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -175,11 +176,8 @@ export default async function DashboardPage() {
 
           <section className="bg-card text-card-foreground border border-border p-6 rounded-lg shadow-sm flex flex-col min-h-[300px]">
             <h2 className="text-xl font-semibold mb-4">Ask the Briefing Agent</h2>
-            <div className="w-full flex-1 border border-border rounded-md p-4 bg-muted/50 mb-4 flex flex-col justify-center items-center">
-              <p className="text-sm text-muted-foreground text-center">Chat interface will render here...</p>
-              <p className="text-xs text-muted-foreground mt-2 text-center max-w-sm">
-                Try asking: "Connect my Slack account", "Summarize my unread messages", or "Update my portfolio timeline!"
-              </p>
+            <div className="w-full flex-1 border border-border rounded-md p-4 bg-background mb-4">
+              <ChatInterface tenantId={tenant.id} />
             </div>
           </section>
         </div>
