@@ -19,5 +19,5 @@ export async function POST(req: Request) {
     tools: buildTools(tenantId),
   });
 
-  return result.toDataStreamResponse();
+  return result.toTextStreamResponse();
 }

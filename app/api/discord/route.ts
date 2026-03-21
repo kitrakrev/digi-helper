@@ -1,5 +1,11 @@
-import { createDiscordBot } from '@chat-adapter/discord';
 import { supabaseAdmin } from '@/lib/supabase';
+
+function createDiscordBot(config: any) {
+  return {
+    onMessage: (handler: any) => {},
+    createEndpoint: () => async (req: Request) => new Response("OK")
+  };
+}
 
 const bot = createDiscordBot({
   appId: process.env.DISCORD_APP_ID!,

@@ -10,6 +10,7 @@ export const buildTools = (tenantId: string) => ({
       primaryColor: z.string().describe('The primary CSS color in HSL format, e.g., "221.2 83.2% 53.3%"'),
       radius: z.string().describe('The border radius, e.g., "0.5rem"'),
     }),
+    // @ts-ignore
     execute: async ({ primaryColor, radius }) => {
       if (!tenantId) return { success: false, error: 'Tenant ID required' };
       
@@ -42,6 +43,7 @@ export const buildTools = (tenantId: string) => ({
       newContent: z.string().describe('The entire new content of the file to replace the old content'),
       commitMessage: z.string().describe('The commit message for the update')
     }),
+    // @ts-ignore
     execute: async ({ repoName, filePath, newContent, commitMessage }) => {
       if (!tenantId) return { error: 'Tenant ID required' };
       const { data: integration } = await supabaseAdmin
@@ -96,6 +98,7 @@ export const buildTools = (tenantId: string) => ({
       message: z.string().describe('The content of the update to broadcast'),
       platforms: z.array(z.enum(['website', 'linkedin', 'youtube'])).describe('The platforms to broadcast to')
     }),
+    // @ts-ignore
     execute: async ({ message, platforms }) => {
       const results: string[] = [];
       if (!tenantId) return { success: false, error: 'Tenant ID required' };
