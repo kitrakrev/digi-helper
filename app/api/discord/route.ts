@@ -3,14 +3,15 @@ import { createDiscordAdapter } from '@chat-adapter/discord';
 import { createMemoryState } from '@chat-adapter/state-memory';
 import { supabaseAdmin } from '@/lib/supabase';
 
+// Safely initialize the chat SDK with environment variable checks
 const chat = new Chat({
   userName: 'Omni-Brief Bot',
   state: createMemoryState(),
   adapters: {
     discord: createDiscordAdapter({
-      applicationId: process.env.DISCORD_APP_ID!,
-      botToken: process.env.DISCORD_BOT_TOKEN!,
-      publicKey: process.env.DISCORD_PUBLIC_KEY!,
+      applicationId: process.env.DISCORD_APP_ID || '',
+      botToken: process.env.DISCORD_BOT_TOKEN || '',
+      publicKey: process.env.DISCORD_PUBLIC_KEY || '',
     }),
   },
 });
@@ -48,5 +49,18 @@ chat.onNewMessage(/^!recent-logs/, async (thread, message) => {
   await thread.post(`**Recent Activity Logs:**\n${logSummary}`);
 });
 
-// Export the webhook handler for Next.js App Router
-export const POST = async (req: Request) => chat.webhooks.discord(req);
+// Export the webhook handler with error boundaries
+export const POST = async (req: Request) => {
+  try {
+    if (!process.env.DISCORD_PUBLIC_KEY) {
+      console.error("[Discord] Missing DISCORD_PUBLIC_KEY environment variable.");
+      return new Response("Missing Discord Environment Variables on Vercel", { status: 500 });
+    }
+    
+    // Process the Discord webhook ping or event
+    return await chat.webhooks.discord(req);
+  } catch (error) {
+    console.error("[Discord] Webhook processing error:", error);
+    return new Response("Internal Server Error", { status: 500 });
+  }
+};
