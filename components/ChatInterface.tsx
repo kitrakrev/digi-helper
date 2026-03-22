@@ -48,7 +48,7 @@ export default function ChatInterface({ tenantId }: { tenantId: string }) {
         />
         <button 
           type="submit" 
-          disabled={isLoading || !input.trim()}
+          disabled={isLoading || !input || !input.trim()}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50 transition-colors"
         >
           Send
