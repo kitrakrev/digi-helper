@@ -27,11 +27,9 @@ export async function POST(req: Request) {
   try {
     const rawBody = await req.text();
     // In production, we should uncomment signature verification
-    /*
     if (!verifySlackSignature(req, rawBody)) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
-    */
 
     const body = JSON.parse(rawBody);
 
