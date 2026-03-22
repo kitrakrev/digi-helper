@@ -12,7 +12,7 @@ export default async function DashboardPage() {
   }
 
   // 1. Ensure user exists in public.users
-  const { data: publicUser, error: userFetchError } = await supabaseAdmin
+  const { data: publicUser, error: userFetchError } = await supabase
     .from('users')
     .select('id')
     .eq('id', user.id)
@@ -42,7 +42,7 @@ export default async function DashboardPage() {
     const { data: newTenant, error: insertTenantError } = await supabase
       .from('tenants')
       .insert({
-        name: `${user.user_metadata.full_name || 'User'}'s Workspace`,
+        name: `${user.user_metadata?.full_name || 'User'}'s Workspace`,
         owner_id: user.id,
       })
       .select('id, name')
@@ -104,20 +104,24 @@ export default async function DashboardPage() {
   }
 
   // Fetch Integrations
-  const { data: integrations } = await supabaseAdmin
+  const { data: integrations, error: integrationsError } = await supabase
     .from('integrations')
     .select('id, platform, created_at, credentials')
     .eq('tenant_id', tenant.id);
+    
+  if (integrationsError) console.error("Error fetching integrations:", integrationsError);
 
   const linkedPlatforms = integrations?.map(i => i.platform) || [];
 
   // Fetch the latest logs
-  const { data: logs } = await supabaseAdmin
+  const { data: logs, error: logsError } = await supabase
     .from('message_logs')
     .select('platform, content, created_at')
     .eq('tenant_id', tenant.id)
     .order('created_at', { ascending: false })
     .limit(10);
+    
+  if (logsError) console.error("Error fetching logs:", logsError);
     
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground p-8">
