@@ -1,7 +1,7 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 export default function ChatInterface({ tenantId }: { tenantId: string }) {
   const chatConfig = useChat({
@@ -11,7 +11,8 @@ export default function ChatInterface({ tenantId }: { tenantId: string }) {
     },
   } as any) as any;
 
-  const { messages, input = '', handleInputChange, handleSubmit, status } = chatConfig;
+  const { messages, append, status } = chatConfig;
+  const [localInput, setLocalInput] = useState('');
 
   const isLoading = status === 'submitted' || status === 'streaming';
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -20,11 +21,16 @@ export default function ChatInterface({ tenantId }: { tenantId: string }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Debugging logs
-  console.log('[ChatInterface Debug] input:', input);
-  console.log('[ChatInterface Debug] status:', status);
-  console.log('[ChatInterface Debug] isLoading:', isLoading);
-  console.log('[ChatInterface Debug] button disabled?:', isLoading || !input || !input.trim());
+  const handleSend = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!localInput.trim() || isLoading) return;
+    
+    append({
+      role: 'user',
+      content: localInput
+    });
+    setLocalInput('');
+  };
 
   return (
     <div className="flex flex-col h-full w-full min-h-[350px] max-h-[500px]">
@@ -44,17 +50,17 @@ export default function ChatInterface({ tenantId }: { tenantId: string }) {
         )}
         <div ref={messagesEndRef} />
       </div>
-      <form onSubmit={handleSubmit} className="flex gap-2">
+      <form onSubmit={handleSend} className="flex gap-2">
         <input
           className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={input}
+          value={localInput}
           placeholder="Ask the Briefing Agent..."
-          onChange={handleInputChange}
+          onChange={(e) => setLocalInput(e.target.value)}
           disabled={isLoading}
         />
         <button 
           type="submit" 
-          disabled={isLoading || !input || typeof input !== 'string' || !input.trim()}
+          disabled={isLoading || !localInput.trim()}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50 transition-colors"
         >
           Send
