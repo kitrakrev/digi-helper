@@ -11,10 +11,10 @@ export default function ChatInterface({ tenantId }: { tenantId: string }) {
     },
   } as any) as any;
 
-  const { messages, append, status } = chatConfig;
+  const { messages, append, isLoading: isChatLoading } = chatConfig;
   const [localInput, setLocalInput] = useState('');
 
-  const isLoading = status === 'submitted' || status === 'streaming';
+  const isLoading = isChatLoading || false;
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
