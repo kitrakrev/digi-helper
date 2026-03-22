@@ -11,10 +11,10 @@ export default function ChatInterface({ tenantId }: { tenantId: string }) {
     },
   } as any) as any;
 
-  const { messages, append, isLoading: isChatLoading } = chatConfig;
+  const { messages, sendMessage, status } = chatConfig;
   const [localInput, setLocalInput] = useState('');
 
-  const isLoading = isChatLoading || false;
+  const isLoading = status === 'submitted' || status === 'streaming';
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function ChatInterface({ tenantId }: { tenantId: string }) {
     e.preventDefault();
     if (!localInput.trim() || isLoading) return;
     
-    append({
+    sendMessage({
       role: 'user',
       content: localInput
     });
