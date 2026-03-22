@@ -1,34 +1,24 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 
 export default function ChatInterface({ tenantId }: { tenantId: string }) {
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({
-      api: '/api/chat',
-      body: {
-        tenantId,
-      },
-    }),
-  });
+  const chatConfig = useChat({
+    api: '/api/chat',
+    body: {
+      tenantId,
+    },
+  } as any) as any;
 
-  const [input, setInput] = useState('');
+  const { messages, input, handleInputChange, handleSubmit, status } = chatConfig;
+
   const isLoading = status === 'submitted' || status === 'streaming';
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
-    
-    sendMessage({ role: 'user', parts: [{ type: 'text', text: input }] });
-    setInput('');
-  };
 
   return (
     <div className="flex flex-col h-full w-full min-h-[350px] max-h-[500px]">
@@ -38,10 +28,10 @@ export default function ChatInterface({ tenantId }: { tenantId: string }) {
             <p>Try asking: "Connect my Slack account", "Summarize my unread messages", or "Update my portfolio timeline!"</p>
           </div>
         ) : (
-          messages.map(m => (
+          messages.map((m: any) => (
             <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] rounded-lg p-3 text-sm ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-muted text-foreground'}`}>
-                <p className="whitespace-pre-wrap">{m.parts?.map((p: any) => p.type === 'text' ? p.text : (p.type === 'tool-invocation' || p.type === 'tool-call' ? `[Running tool: ${p.toolName || p.toolCall?.toolName || '...'}...]` : '')).join('\n') || ''}</p>
+                <p className="whitespace-pre-wrap">{m.content || ((m as any).toolInvocations && (m as any).toolInvocations.length > 0 ? `[Running tool: ${(m as any).toolInvocations[0].toolName}...]` : '')}</p>
               </div>
             </div>
           ))
@@ -53,7 +43,7 @@ export default function ChatInterface({ tenantId }: { tenantId: string }) {
           className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={input}
           placeholder="Ask the Briefing Agent..."
-          onChange={(e) => setInput(e.target.value)}
+          onChange={handleInputChange}
           disabled={isLoading}
         />
         <button 
